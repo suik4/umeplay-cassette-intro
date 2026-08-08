@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="UMEPLAY INSANE 기록 진입 캠페인" />
+    <title>UMEPLAY | 기록에 진입하다</title>
+    <link rel="preload" href="/assets/umeplay-logo.png" as="image" />
+    <link rel="preload" href="/assets/tape-insane.png" as="image" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="experience" id="experience">
+      <img class="deck-photo" src="/assets/vhs-deck.png" alt="비어 있는 VHS 재생기" />
+      <video
+        class="media-video"
+        id="mediaVideo"
+        muted
+        playsinline
+        preload="auto"
+        src="/assets/umeplay-promo.mp4"
+      ></video>
+      <img class="media-still" id="mediaStill" alt="" />
+      <div class="media-shade" aria-hidden="true"></div>
+      <div class="curtain" aria-hidden="true">
+        <span class="c-top"></span>
+        <span class="c-bot"></span>
+      </div>
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="flash" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <img src="/assets/umeplay-logo.png" alt="UMEPLAY" />
+        <button class="skip" id="skipButton" type="button">건너뛰기</button>
+      </header>
+
+      <section class="idle-stage" id="idleStage" aria-label="카세트 삽입">
+        <div class="idle-copy">
+          <p>NO MEDIA</p>
+          <h1>카세트를 밀어 넣으십시오</h1>
+        </div>
+
+        <div class="slot" id="slot" aria-hidden="true">
+          <span></span>
+        </div>
+
+        <button
+          class="cassette"
+          id="cassette"
+          type="button"
+          aria-label="카세트를 위로 밀어 기록을 재생합니다"
+        >
+          <img src="/assets/tape-insane.png" alt="INSANE 기록 카세트" draggable="false" />
+        </button>
+
+      </section>
+
+      <section class="narration" aria-live="polite">
+        <p id="narrationText"></p>
+      </section>
+
+      <section class="reveal" id="reveal" aria-label="INSANE 기록">
+        <p class="reveal-label">RECORD FOUND</p>
+        <h2>INSANE</h2>
+        <p class="reveal-copy">당신이 본 장면이 전부라고 믿습니까?</p>
+        <div class="reveal-actions">
+          <a href="https://www.umeplay.kr/#reservation" target="_blank" rel="noreferrer">
+            기록에 진입하기
+          </a>
+          <button id="replayButton" type="button">다시 재생</button>
+        </div>
+      </section>
+
+      <footer class="playback-state" aria-hidden="true">
+        <span id="stateText">NO MEDIA</span>
+        <span id="timecode">00:00:00</span>
+      </footer>
+
+      <div class="sr-only" id="liveRegion" aria-live="assertive"></div>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
