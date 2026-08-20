@@ -171,7 +171,7 @@ function insertTape() {
     revealInsane();
   };
   mediaVideo.onended = revealAfterVideo;
-  schedule(revealAfterVideo, 9200);
+  schedule(revealAfterVideo, 10500);
 }
 
 function reset() {
