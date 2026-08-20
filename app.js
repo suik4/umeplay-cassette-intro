@@ -26,6 +26,24 @@ const lines = [
   "당신은 그 시점에 있었던 인물이 된다.",
 ];
 
+// 세로(모바일) 화면에선 9:19.5 블러필 버전, 그 외엔 16:9 버전을 쓴다.
+// (16:9를 세로 화면에 넣으면 cover는 좌우가 크게 잘리고 contain은 검은 여백이 생긴다.)
+const portraitQuery = window.matchMedia("(orientation: portrait)");
+function applyMediaSource() {
+  const file = portraitQuery.matches
+    ? "umeplay-cinema-intro-portrait.mp4"
+    : "umeplay-cinema-intro.mp4";
+  const next = asset(file);
+  if (mediaVideo.getAttribute("src") !== next) {
+    mediaVideo.setAttribute("src", next);
+    mediaVideo.load();
+  }
+}
+applyMediaSource();
+if (portraitQuery.addEventListener) {
+  portraitQuery.addEventListener("change", applyMediaSource);
+}
+
 let dragging = false;
 let running = false;
 let startPoint = { x: 0, y: 0 };
@@ -131,6 +149,13 @@ function insertTape() {
   if (running) return;
   running = true;
   clearTimers();
+
+  // iOS 사파리: 영상 재생은 반드시 사용자 제스처 안에서 play()를 호출해야 허용된다.
+  // (아래 650ms setTimeout 안에서만 부르면 '제스처 밖'으로 간주돼 재생이 차단됨.)
+  mediaVideo.currentTime = 0;
+  const kick = mediaVideo.play();
+  if (kick && kick.catch) kick.catch(() => {});
+
   playInsertSound();
   experience.classList.remove("is-drop-ready");
   experience.classList.add("is-inserting");
