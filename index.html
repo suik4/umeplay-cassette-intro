@@ -18,15 +18,17 @@
         muted
         playsinline
         preload="auto"
-        src="/assets/umeplay-promo.mp4"
+        src="/assets/umeplay-cinema-intro.mp4"
       ></video>
-      <img class="media-still" id="mediaStill" alt="" />
+      <img class="media-still" id="mediaStill" src="/assets/insane-key.jpg" alt="" />
       <div class="media-shade" aria-hidden="true"></div>
+      <div class="haze" aria-hidden="true"></div>
       <div class="curtain" aria-hidden="true">
         <span class="c-top"></span>
         <span class="c-bot"></span>
       </div>
       <div class="scanlines" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
       <div class="flash" aria-hidden="true"></div>
 
       <header class="topbar">
@@ -36,22 +38,29 @@
 
       <section class="idle-stage" id="idleStage" aria-label="카세트 삽입">
         <div class="idle-copy">
-          <p>NO MEDIA</p>
-          <h1>카세트를 밀어 넣으십시오</h1>
+          <p>RECORD 001 / READY</p>
+          <h1>카세트를 밀어 기록을 재생하세요</h1>
+          <span class="idle-hint" id="idleHint">
+            <i class="gesture-icon" aria-hidden="true"><b></b></i>
+            <strong id="idleHintText">위로 밀거나 가볍게 터치</strong>
+          </span>
         </div>
 
         <div class="slot" id="slot" aria-hidden="true">
           <span></span>
         </div>
 
-        <button
-          class="cassette"
-          id="cassette"
-          type="button"
-          aria-label="카세트를 위로 밀어 기록을 재생합니다"
-        >
-          <img src="/assets/tape-insane.png" alt="INSANE 기록 카세트" draggable="false" />
-        </button>
+        <div class="tape-wrap" id="tapeWrap">
+          <button
+            class="cassette"
+            id="cassette"
+            type="button"
+            aria-label="카세트를 위로 밀어 기록을 재생합니다"
+            aria-describedby="idleHint"
+          >
+            <img src="/assets/tape-insane.png" alt="INSANE 기록 카세트" draggable="false" />
+          </button>
+        </div>
 
       </section>
 

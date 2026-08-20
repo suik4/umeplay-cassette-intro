@@ -8,6 +8,7 @@ const skipButton = document.querySelector("#skipButton");
 const replayButton = document.querySelector("#replayButton");
 const stateText = document.querySelector("#stateText");
 const timecode = document.querySelector("#timecode");
+const idleHintText = document.querySelector("#idleHintText");
 const liveRegion = document.querySelector("#liveRegion");
 const flash = document.querySelector(".flash");
 
@@ -17,7 +18,7 @@ const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`;
 const frames = [
   asset("slide1-optimized.jpg"),
   asset("reviver-hospital.png"),
-  asset("insane.jpg"),
+  asset("insane-key.jpg"),
 ];
 const lines = [
   "저장매체는 모든 시야를 담지 못한다.",
@@ -118,7 +119,7 @@ function revealInsane() {
   clearTimers();
   hideLine();
   mediaVideo.pause();
-  mediaStill.src = asset("insane.jpg");
+  mediaStill.src = asset("insane-key.jpg");
   mediaStill.style.opacity = "";
   experience.classList.add("is-result");
   stateText.textContent = "RECORD 001";
@@ -150,16 +151,27 @@ function insertTape() {
     startTimecode();
   }, 650);
 
-  schedule(() => showLine(lines[0]), 920);
-  schedule(() => showFrame(frames[0], 220), 1380);
-  schedule(hideLine, 1720);
-  schedule(() => showFrame(frames[2], 300), 1880);
-  schedule(() => showLine(lines[1]), 2180);
-  schedule(() => showFrame(frames[1], 360), 2660);
-  schedule(hideLine, 3000);
-  schedule(() => showLine(lines[2]), 3220);
-  schedule(() => showFrame(frames[2], 460), 3660);
-  schedule(revealInsane, 4380);
+  // 영화관·팝콘 인트로가 지나가고 화면이 어두워지는 구간(≈영상 3초~)부터
+  // 하단 나레이션 타이포가 올라온다.
+  schedule(() => showLine(lines[0]), 3600);
+  schedule(() => showFrame(frames[0], 220), 4100);
+  schedule(hideLine, 4450);
+  schedule(() => showFrame(frames[2], 300), 4600);
+  schedule(() => showLine(lines[1]), 4900);
+  schedule(() => showFrame(frames[1], 360), 5400);
+  schedule(hideLine, 5800);
+  schedule(() => showLine(lines[2]), 6000);
+  schedule(() => showFrame(frames[2], 460), 6500);
+  schedule(hideLine, 7200);
+
+  // 시네마 인트로 영상(≈8초)이 VHS 글리치 아웃트로까지 끝까지 재생되면
+  // 그 흐름 그대로 INSANE 기록으로 전환한다. (ended 이벤트 우선, 폴백 타이머는 여유 있게)
+  const revealAfterVideo = () => {
+    mediaVideo.onended = null;
+    revealInsane();
+  };
+  mediaVideo.onended = revealAfterVideo;
+  schedule(revealAfterVideo, 9200);
 }
 
 function reset() {
@@ -169,17 +181,19 @@ function reset() {
   offset = { x: 0, y: 0 };
   // 다시 재생할 때는 인트로 커튼을 반복하지 않고 바로 조작 가능한 상태로 둔다.
   experience.className = "experience is-revealed";
+  experience.style.setProperty("--near", "0");
   cassette.className = "cassette";
   cassette.style.transform = "";
   mediaVideo.pause();
   mediaVideo.currentTime = 0;
-  mediaStill.removeAttribute("src");
+  mediaStill.src = asset("insane-key.jpg");
   mediaStill.style.opacity = "";
   narrationText.textContent = "";
   narrationText.classList.remove("is-visible");
   stateText.textContent = "NO MEDIA";
   timecode.textContent = "00:00:00";
-  announce("카세트를 위로 밀어 기록을 재생하십시오.");
+  idleHintText.textContent = "위로 밀거나 가볍게 터치";
+  announce("카세트를 위로 밀거나 터치하여 기록을 재생하세요.");
 }
 
 function distanceToSlot() {
@@ -203,6 +217,15 @@ function onPointerDown(event) {
   offset = { x: 0, y: 0 };
   cassette.setPointerCapture(event.pointerId);
   cassette.classList.add("is-dragging");
+  experience.classList.add("is-interacting");
+  idleHintText.textContent = "투입구까지 밀어 올리세요";
+}
+
+// 투입구까지 남은 거리를 0..1 근접도로 바꾼다. 슬롯 발광과 헤이즈가 이 값을 쓴다.
+function updateNear() {
+  const d = distanceToSlot();
+  const near = Math.max(0, Math.min(1, 1 - (d - 60) / 280));
+  experience.style.setProperty("--near", near.toFixed(3));
 }
 
 function onPointerMove(event) {
@@ -213,14 +236,34 @@ function onPointerMove(event) {
   };
   const rotation = Math.max(-5, Math.min(5, offset.x / 50));
   cassette.style.transform = `translate3d(calc(-50% + ${offset.x}px), ${offset.y}px, 0) rotate(${rotation}deg)`;
-  experience.classList.toggle("is-drop-ready", distanceToSlot() < 150);
+  const isDropReady = distanceToSlot() < 150;
+  experience.classList.toggle("is-drop-ready", isDropReady);
+  idleHintText.textContent = isDropReady
+    ? "놓으면 기록이 재생됩니다"
+    : "투입구까지 밀어 올리세요";
+  updateNear();
+
+  // 투입구까지 충분히 밀어 올리면 재생기가 테이프를 받아들인다.
+  // 작은 화면이나 브라우저별 pointerup 누락 때문에 사용자가 슬롯 앞에서 멈추지 않게 한다.
+  if (isDropReady) {
+    dragging = false;
+    if (cassette.hasPointerCapture(event.pointerId)) {
+      cassette.releasePointerCapture(event.pointerId);
+    }
+    cassette.classList.remove("is-dragging");
+    experience.classList.remove("is-interacting");
+    insertTape();
+  }
 }
 
 function onPointerUp(event) {
   if (!dragging || running) return;
   dragging = false;
-  cassette.releasePointerCapture(event.pointerId);
+  if (cassette.hasPointerCapture(event.pointerId)) {
+    cassette.releasePointerCapture(event.pointerId);
+  }
   cassette.classList.remove("is-dragging");
+  experience.classList.remove("is-interacting");
   const movement = Math.hypot(offset.x, offset.y);
   // 탭은 그대로 넣고, 드래그는 '위로 미는' 동작일 때만 삽입한다.
   // 아래로 끌어당겼는데 삽입되면 물체를 다루는 느낌이 깨진다.
@@ -234,6 +277,8 @@ function onPointerUp(event) {
   }
 
   experience.classList.remove("is-drop-ready");
+  experience.style.setProperty("--near", "0");
+  idleHintText.textContent = "위로 밀거나 가볍게 터치";
   const animation = cassette.animate(
     [
       { transform: cassette.style.transform },
@@ -264,15 +309,35 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) mediaVideo.pause();
 });
 
+// 층마다 다른 속도로 따라오게 해서 평면 사진에 깊이를 만든다.
+if (!reduceMotion.matches) {
+  let raf = null;
+  const track = (event) => {
+    if (raf) return;
+    raf = window.requestAnimationFrame(() => {
+      raf = null;
+      const mx = (event.clientX / window.innerWidth - 0.5) * 2;
+      const my = (event.clientY / window.innerHeight - 0.5) * 2;
+      experience.style.setProperty("--mx", mx.toFixed(3));
+      experience.style.setProperty("--my", my.toFixed(3));
+    });
+  };
+  experience.addEventListener("pointermove", track, { passive: true });
+  experience.addEventListener("pointerleave", () => {
+    experience.style.setProperty("--mx", "0");
+    experience.style.setProperty("--my", "0");
+  });
+}
+
 // 검은 화면 위 테이프 한 장 → 화면이 위아래로 갈라지며 재생기가 드러난다 → 삽입.
 function openCurtain() {
   if (experience.classList.contains("is-revealed")) return;
   experience.classList.add("is-revealed");
-  announce("재생기가 열렸습니다. 카세트를 위로 밀어 기록을 재생하십시오.");
+  announce("재생기가 준비되었습니다. 카세트를 위로 밀거나 터치하여 기록을 재생하세요.");
 }
 
 if (reduceMotion.matches) {
   openCurtain();
 } else {
-  window.setTimeout(openCurtain, 1000);
+  window.setTimeout(openCurtain, 120);
 }
